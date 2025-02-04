@@ -1,6 +1,6 @@
 import os
 import eventlet
-eventlet.monkey_patch()  # Essa linha deve vir antes de importar outras bibliotecas que façam I/O
+eventlet.monkey_patch()
 
 from flask import Flask, render_template, jsonify
 from flask_socketio import SocketIO, emit
