@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página do Formulário</title>
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+    <style>
+        /* Estilos Gerais */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* Container Principal */
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* Estilos dos Dropdowns e Textarea */
+        select, textarea {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            background-color: #f9f9f9;
+            transition: border-color 0.3s ease;
+        }
+
+        select:focus, textarea:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* Estilo do Botão */
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div>
+            <h1>Sala</h1>
+            <select id="dropdown">
+                <option value="Sala 1">Sala 1</option>
+                <option value="Sala 2">Sala 2</option>
+                <option value="Sala 3">Sala 3</option>
+            </select>
+        </div>
+        <div>
+            <h1>Senha</h1>
+            <textarea id="textarea" placeholder="Digite a senha..."></textarea>
+        </div>
+        <div>
+            <h1>Doutor</h1>
+            <select id="dropdown_doutor">
+                <option value="doutor 1">Doutor 1</option>
+                <option value="doutor 2">Doutor 2</option>
+                <option value="doutor 3">Doutor 3</option>
+            </select>
+        </div>
+        <button onclick="enviar()">Enviar</button>
+    </div>
+
+    <script>
+        const socket = io(); // Faz a comunicação com o backend por WebSocket
+
+        function enviar() {
+            const dropdown = document.getElementById('dropdown');
+            const selectedSala = dropdown.value; // Pega a opção que o cliente solicitou
+            socket.emit('send_sala', { sala: selectedSala }); // Envia ao servidor a opção
+
+            const textarea = document.getElementById('textarea');
+            const selectedSenha = textarea.value;
+            socket.emit('send_senha', { senha: selectedSenha });
+
+            const dropdown_doutor = document.getElementById('dropdown_doutor');
+            const selectedDoutor = dropdown_doutor.value;
+            socket.emit('send_doutor', { doutor: selectedDoutor });
+
+            socket.emit('tocar_som');
+        }
+    </script>
+</body>
+</html>

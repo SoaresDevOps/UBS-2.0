@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultado</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js"></script>
+
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+    <style>
+        /* Estilos Gerais */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* Container Principal */
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        /* Estilos dos Displays */
+        #displaySala, #displaySenha, #displayDoutor {
+            font-size: 28px;
+            color: #007bff;
+            margin-bottom: 30px;
+            font-weight: bold;
+        }
+
+        /* Estilo do Áudio (Oculto) */
+        audio {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <audio id="meuAudio">
+        <source src="{{ url_for('static', filename='audio/som.mp3') }}" type="audio/mpeg">
+    </audio>
+
+    <div class="container">
+        <div>
+            <h1>Sala:</h1>
+            <div id="displaySala">Nenhuma sala ainda</div>
+        </div>
+        <div>
+            <h1>Paciente:</h1>
+            <div id="displaySenha">Nenhuma senha ainda</div>
+        </div>
+        <div>
+            <h1>Doutor:</h1>
+            <div id="displayDoutor">Nenhum doutor(a) ainda</div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io(); // Conecta ao servidor backend por WebSocket
+        const audio = document.getElementById('meuAudio');
+        let salaAtual = ""; // Variável para armazenar a sala até a senha chegar
+    
+        // Recebe a senha em tempo real
+        socket.on('receive_senha', (data) => {
+            document.getElementById('displaySenha').textContent = data.senha || 'Nenhuma senha ainda';
+    
+            const mensagemPaciente = `Paciente ${data.senha} ir para`;
+            const utterancePaciente = new SpeechSynthesisUtterance(mensagemPaciente);
+            utterancePaciente.lang = 'pt-BR';
+    
+            const mensagemSala = `${salaAtual}`;
+            const utteranceSala = new SpeechSynthesisUtterance(mensagemSala);
+            utteranceSala.lang = 'pt-BR';
+    
+
+            // Primeiro toca o som
+            audio.play().then(() => {
+                audio.onended = () => {
+                    console.log("Áudio finalizado, iniciando a fala.");
+                    window.speechSynthesis.speak(utterancePaciente);
+                    utterancePaciente.onend = () => {
+                        window.speechSynthesis.speak(utteranceSala);
+                    };
+                };
+            }).catch(error => {
+                console.error("Erro ao reproduzir o áudio:", error);
+                window.speechSynthesis.speak(utterancePaciente);
+                utterancePaciente.onend = () => {
+                    window.speechSynthesis.speak(utteranceSala);
+                };
+            });
+        });
+    
+        // Recebe a sala em tempo real
+        socket.on('receive_sala', (data) => {
+            document.getElementById('displaySala').textContent = data.sala || 'Nenhuma sala ainda';
+            salaAtual = data.sala || "";
+        });
+    
+        // Recebe o doutor em tempo real
+        socket.on('receive_doutor', (data) => {
+            document.getElementById('displayDoutor').textContent = data.doutor || 'Nenhum doutor(a) ainda';
+        });
+    </script>
+    
+    
+    
+</body>
+</html>
