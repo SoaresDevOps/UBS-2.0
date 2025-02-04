@@ -1,23 +1,21 @@
-#importando as Bibliotecas
+import os
+import eventlet
+eventlet.monkey_patch()  # Essa linha deve vir antes de importar outras bibliotecas que façam I/O
+
 from flask import Flask, render_template, jsonify
 from flask_socketio import SocketIO, emit
-import os
-#Configurações basicas
+
 app = Flask(__name__, static_folder='static', template_folder='static')
-socketio = SocketIO(app, cors_allowed_origins="*") #permitindo a comunicacao de varios dispositivos
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
-
-#pagina principal
 @app.route('/')
 def index():
     return render_template('index.html')
 
-#pagina do resultado
 @app.route('/resultado')
 def resultado():
     return render_template('resultado.html')
 
-#comunicação por websocket
 @socketio.on('send_sala')
 def handle_send_sala(data):
     sala = data.get('sala', '')
@@ -39,5 +37,4 @@ def handle_tocar_som():
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
-    # Em produção, desative o debug
     socketio.run(app, debug=False, host='0.0.0.0', port=port)
