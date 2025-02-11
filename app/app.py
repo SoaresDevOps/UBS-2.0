@@ -4,8 +4,11 @@ eventlet.monkey_patch()
 
 from flask import Flask, render_template, jsonify
 from flask_socketio import SocketIO, emit
+from flask_cors import CORS
+
 
 app = Flask(__name__, static_folder='static', template_folder='static')
+CORS(app, resources={r"/*": {"origins": "https://ubs-2-0.onrender.com"}})
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 @app.route('/')
