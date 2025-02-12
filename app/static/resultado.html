@@ -76,20 +76,33 @@
         const audio = document.getElementById('meuAudio');
         let salaAtual = ""; // Variável para armazenar a sala até a senha chegar
     
+        // Garante que o áudio possa ser reproduzido sempre
+        function forcarReproducaoAudio() {
+            audio.muted = false;
+            audio.play().then(() => {
+                console.log("Áudio reproduzido com sucesso.");
+            }).catch(error => {
+                console.warn("Reprodução automática bloqueada. Aguardando interação do usuário...");
+            });
+        }
+    
         // Recebe a senha em tempo real
         socket.on('receive_senha', (data) => {
             document.getElementById('displaySenha').textContent = data.senha || 'Nenhuma senha ainda';
     
             const mensagemPaciente = `Paciente ${data.senha} ir para ${salaAtual}`;
     
-            // Primeiro toca o som
+            // Garante que o áudio será carregado e tocado corretamente
+            audio.currentTime = 0;
             audio.play().then(() => {
+                console.log("Áudio inicializado.");
                 audio.onended = () => {
                     console.log("Áudio finalizado, iniciando a fala.");
                     responsiveVoice.speak(mensagemPaciente, "Brazilian Portuguese Female");
                 };
             }).catch(error => {
                 console.error("Erro ao reproduzir o áudio:", error);
+                // Se o áudio falhar, inicia diretamente a fala
                 responsiveVoice.speak(mensagemPaciente, "Brazilian Portuguese Female");
             });
         });
@@ -104,6 +117,9 @@
         socket.on('receive_doutor', (data) => {
             document.getElementById('displayDoutor').textContent = data.doutor || 'Nenhum doutor(a) ainda';
         });
+    
+        // Adiciona um evento de clique para destravar a reprodução automática
+        document.addEventListener("click", forcarReproducaoAudio, { once: true });
     </script>
     
     
