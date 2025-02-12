@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resultado</title>
-    <script src="https://code.responsivevoice.org/responsivevoice.js?key=idn3A29C"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js"></script>
     <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
     <style>
@@ -75,60 +74,68 @@
         const socket = io(); // Conexão com WebSocket
         const audio = document.getElementById('meuAudio');
         let salaAtual = ""; 
-    
-        // Função para tocar áudio e depois voz
+
+        // Função para tocar áudio e depois a voz
         function tocarAudioEVoz(mensagem) {
             console.log("🔊 Tentando tocar áudio...");
-    
+
             // Resetando o áudio para garantir que sempre começa do começo
             audio.currentTime = 0;
             audio.muted = false;
-    
+
             // Tenta tocar o áudio primeiro
             audio.play()
                 .then(() => {
                     console.log("✅ Áudio tocando...");
                     audio.onended = () => {
                         console.log("🎤 Áudio finalizado, começando a fala...");
-                        responsiveVoice.speak(mensagem, "Brazilian Portuguese Female");
+                        falarMensagem(mensagem);
                     };
                 })
                 .catch(error => {
                     console.warn("⚠️ Erro ao tocar áudio:", error);
                     console.log("🔄 Chamando a voz diretamente...");
-                    responsiveVoice.speak(mensagem, "Brazilian Portuguese Female");
+                    falarMensagem(mensagem);
                 });
         }
-    
+
+        // Função para falar a mensagem com SpeechSynthesis
+        function falarMensagem(mensagem) {
+            const sintetizador = window.speechSynthesis;
+            const fala = new SpeechSynthesisUtterance(mensagem);
+            fala.lang = "pt-BR";
+            sintetizador.speak(fala);
+        }
+
         // Quando a senha chega
         socket.on('receive_senha', (data) => {
             console.log("📩 Nova senha recebida:", data.senha);
             document.getElementById('displaySenha').textContent = data.senha || 'Nenhuma senha ainda';
-    
+
             const mensagemPaciente = `Paciente ${data.senha} ir para ${salaAtual}`;
             tocarAudioEVoz(mensagemPaciente);
         });
-    
+
         // Quando a sala chega
         socket.on('receive_sala', (data) => {
             console.log("📩 Nova sala recebida:", data.sala);
             document.getElementById('displaySala').textContent = data.sala || 'Nenhuma sala ainda';
             salaAtual = data.sala || "";
         });
-    
+
         // Quando o doutor chega
         socket.on('receive_doutor', (data) => {
             console.log("📩 Novo doutor recebido:", data.doutor);
             document.getElementById('displayDoutor').textContent = data.doutor || 'Nenhum doutor(a) ainda';
         });
-    
+
         // Forçando o desbloqueio do áudio na primeira interação do usuário
         document.addEventListener("click", () => {
             console.log("🖱️ Usuário clicou! Tentando destravar o áudio...");
             audio.play().catch(error => console.warn("🚫 Ainda bloqueado pelo navegador:", error));
         }, { once: true });
-    
+
     </script>
-    
+
 </body>
 </html>
