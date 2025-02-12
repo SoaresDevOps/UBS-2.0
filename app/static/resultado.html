@@ -1,141 +1,116 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resultado</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js"></script>
-    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
-    <style>
-        /* Estilos Gerais */
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f4f9;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-
-        /* Container Principal */
-        .container {
-            background-color: #ffffff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            max-width: 600px;
-            width: 100%;
-            text-align: center;
-        }
-
-        h1 {
-            font-size: 24px;
-            color: #333;
-            margin-bottom: 10px;
-        }
-
-        /* Estilos dos Displays */
-        #displaySala, #displaySenha, #displayDoutor {
-            font-size: 28px;
-            color: #007bff;
-            margin-bottom: 30px;
-            font-weight: bold;
-        }
-
-        /* Estilo do Áudio (Oculto) */
-        audio {
-            display: none;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <audio id="meuAudio">
-        <source src="{{ url_for('static', filename='audio/som.mp3') }}" type="audio/mpeg">
-    </audio>
-
-    <div class="container">
-        <div>
-            <h1>Sala:</h1>
-            <div id="displaySala">Nenhuma sala ainda</div>
+    <div class="result">
+        <div class="info">
+            <div id="resultado"></div>
         </div>
-        <div>
-            <h1>Paciente:</h1>
-            <div id="displaySenha">Nenhuma senha ainda</div>
+        <div class="ultimas-senhas" id="ultimasSenhas">
+            <!-- Últimas senhas chamadas aparecerão aqui -->
         </div>
-        <div>
-            <h1>Doutor:</h1>
-            <div id="displayDoutor">Nenhum doutor(a) ainda</div>
-        </div>
+        <!-- Elemento de áudio para reprodução -->
+        <audio id="audio" src="som_senha.mp3"></audio>
     </div>
 
-    <script>
-        const socket = io(); // Conexão com WebSocket
-        const audio = document.getElementById('meuAudio');
-        let salaAtual = ""; 
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-analytics.js";
+    import { getDatabase, ref, onChildAdded } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
 
-        // Função para tocar áudio e depois a voz
-        function tocarAudioEVoz(mensagem) {
-            console.log("🔊 Tentando tocar áudio...");
+    // Configuração do Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyAhDIHl443t9KNOXVY-E2uMy7cIq7JCsKI",
+        authDomain: "posto-de-saude-42845.firebaseapp.com",
+        projectId: "posto-de-saude-42845",
+        storageBucket: "posto-de-saude-42845.appspot.com",
+        messagingSenderId: "414153607163",
+        appId: "1:414153607163:web:34eb3c8199f70678786d5e",
+        measurementId: "G-3WVR8L3X7D"
+    };
 
-            // Resetando o áudio para garantir que sempre começa do começo
-            audio.currentTime = 0;
-            audio.muted = false;
+    // Inicializa o Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const database = getDatabase(app);
 
-            // Tenta tocar o áudio primeiro
-            audio.play()
-                .then(() => {
-                    console.log("✅ Áudio tocando...");
-                    audio.onended = () => {
-                        console.log("🎤 Áudio finalizado, começando a fala...");
-                        falarMensagem(mensagem);
-                    };
-                })
-                .catch(error => {
-                    console.warn("⚠️ Erro ao tocar áudio:", error);
-                    console.log("🔄 Chamando a voz diretamente...");
-                    falarMensagem(mensagem);
-                });
+    const cores = {
+        "Jane": "#ff0000",
+        "Luanna": "#0000ff",
+        "Osmair": "#008000",
+        "Amanda": "#ffa500",
+        "Arthur": "#800080",
+        "Andreia": "#ff00ff",
+        "Fernando Viola": "#0000ff",
+        "Luiz Alberto": "#ff0000"
+    };
+
+    // Função para atualizar os dados
+    function atualizarDados(dados) {
+        const resultadoDiv = document.getElementById('resultado');
+        resultadoDiv.innerHTML = 
+            `<div class="text">
+                <div>
+                    <p class="sala" style="font-size: 50px">Sala: ${dados.sala}</p>
+                    <p style="font-size: 80px;">Paciente: ${dados.senha}</p>
+                    <p class="dr" style="color: ${cores[dados.dr]}; font-size: 80px">Dr(a): ${dados.dr}</p>
+                </div>
+            </div>`;
+
+        let ultimasSenhas = JSON.parse(localStorage.getItem('ultimasSenhas')) || [];
+        ultimasSenhas.push({ senha: dados.senha, dr: dados.dr });
+        if (ultimasSenhas.length > 5) {
+            ultimasSenhas.shift();
         }
 
-        // Função para falar a mensagem com SpeechSynthesis
-        function falarMensagem(mensagem) {
-            const sintetizador = window.speechSynthesis;
-            const fala = new SpeechSynthesisUtterance(mensagem);
-            fala.lang = "pt-BR";
-            sintetizador.speak(fala);
+        localStorage.setItem('ultimasSenhas', JSON.stringify(ultimasSenhas));
+
+        const ultimasSenhasDiv = document.getElementById('ultimasSenhas');
+        ultimasSenhasDiv.innerHTML = '';
+        ultimasSenhas.forEach(item => {
+            const senhaItem = document.createElement('div');
+            senhaItem.classList.add('senha-item');
+            senhaItem.textContent = `Paciente: ${item.senha} - Dr(a): ${item.dr}`;
+            ultimasSenhasDiv.appendChild(senhaItem);
+        });
+
+        // Reproduz o som de alerta primeiro
+        const audio = document.getElementById('audio');
+        audio.play();
+
+        // 🔊 Quando o áudio terminar, chama a voz nativa do navegador
+        audio.onended = function() {
+            const mensagem = `Paciente ${dados.senha}, ir para ${dados.sala}`;
+
+            // Usando o SpeechSynthesis para sintetizar a voz
+            const synth = window.speechSynthesis;
+            const utterance = new SpeechSynthesisUtterance(mensagem);
+            utterance.lang = "pt-BR";
+            utterance.rate = 0.9; // Ajusta a velocidade da fala
+            synth.speak(utterance);
+        };
+    }
+
+    // Recupera dados do Firebase Realtime Database
+    const senhasRef = ref(database, 'senhas');
+    onChildAdded(senhasRef, (snapshot) => {
+        const dados = snapshot.val();
+        atualizarDados(dados);
+    });
+
+    window.onload = function() {
+        let dados = localStorage.getItem('dadosFormulario');
+        if (dados) {
+            dados = JSON.parse(dados);
+            atualizarDados(dados);
         }
-
-        // Quando a senha chega
-        socket.on('receive_senha', (data) => {
-            console.log("📩 Nova senha recebida:", data.senha);
-            document.getElementById('displaySenha').textContent = data.senha || 'Nenhuma senha ainda';
-
-            const mensagemPaciente = `Paciente ${data.senha} ir para ${salaAtual}`;
-            tocarAudioEVoz(mensagemPaciente);
-        });
-
-        // Quando a sala chega
-        socket.on('receive_sala', (data) => {
-            console.log("📩 Nova sala recebida:", data.sala);
-            document.getElementById('displaySala').textContent = data.sala || 'Nenhuma sala ainda';
-            salaAtual = data.sala || "";
-        });
-
-        // Quando o doutor chega
-        socket.on('receive_doutor', (data) => {
-            console.log("📩 Novo doutor recebido:", data.doutor);
-            document.getElementById('displayDoutor').textContent = data.doutor || 'Nenhum doutor(a) ainda';
-        });
-
-        // Forçando o desbloqueio do áudio na primeira interação do usuário
-        document.addEventListener("click", () => {
-            console.log("🖱️ Usuário clicou! Tentando destravar o áudio...");
-            audio.play().catch(error => console.warn("🚫 Ainda bloqueado pelo navegador:", error));
-        }, { once: true });
-
-    </script>
+    };
+</script>
 
 </body>
 </html>
