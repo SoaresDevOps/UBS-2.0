@@ -72,61 +72,63 @@
     </div>
 
     <script>
-        const socket = io(); // Conecta ao servidor backend por WebSocket
+        const socket = io(); // Conexão com WebSocket
         const audio = document.getElementById('meuAudio');
-        let salaAtual = ""; // Variável para armazenar a sala até a senha chegar
+        let salaAtual = ""; 
     
         function tocarAudioEVoz(mensagem) {
-            console.log("Tentando tocar o áudio...");
+            console.log("🔊 Tentando tocar áudio...");
     
-            // Reseta o áudio e tenta tocar
+            // Reseta o áudio para garantir que ele sempre toque do início
             audio.currentTime = 0;
             audio.muted = false;
     
+            // Força a reprodução do áudio
             audio.play()
                 .then(() => {
-                    console.log("Áudio tocando...");
+                    console.log("✅ Áudio tocando...");
                     audio.onended = () => {
-                        console.log("Áudio finalizado, iniciando a voz.");
+                        console.log("🎤 Tocando a voz...");
                         responsiveVoice.speak(mensagem, "Brazilian Portuguese Female");
                     };
                 })
                 .catch(error => {
-                    console.warn("Erro ao tocar o áudio:", error);
-                    console.log("Iniciando diretamente a voz...");
+                    console.warn("⚠️ Erro ao tocar áudio:", error);
+                    console.log("🔄 Chamando voz diretamente...");
                     responsiveVoice.speak(mensagem, "Brazilian Portuguese Female");
                 });
         }
     
-        // Recebe a senha em tempo real
+        // 📌 Evento de senha recebida
         socket.on('receive_senha', (data) => {
-            console.log("Nova senha recebida:", data.senha);
+            console.log("📩 Nova senha recebida:", data.senha);
             document.getElementById('displaySenha').textContent = data.senha || 'Nenhuma senha ainda';
     
             const mensagemPaciente = `Paciente ${data.senha} ir para ${salaAtual}`;
             tocarAudioEVoz(mensagemPaciente);
         });
     
-        // Recebe a sala em tempo real
+        // 📌 Evento de sala recebida
         socket.on('receive_sala', (data) => {
-            console.log("Nova sala recebida:", data.sala);
+            console.log("📩 Nova sala recebida:", data.sala);
             document.getElementById('displaySala').textContent = data.sala || 'Nenhuma sala ainda';
             salaAtual = data.sala || "";
         });
     
-        // Recebe o doutor em tempo real
+        // 📌 Evento de doutor recebido
         socket.on('receive_doutor', (data) => {
-            console.log("Novo doutor recebido:", data.doutor);
+            console.log("📩 Novo doutor recebido:", data.doutor);
             document.getElementById('displayDoutor').textContent = data.doutor || 'Nenhum doutor(a) ainda';
         });
     
-        // Garante que o usuário destrave o áudio ao interagir
+        // 📌 Se o navegador bloquear o áudio, tenta liberar com um clique do usuário
         document.addEventListener("click", () => {
-            console.log("Interação detectada! Tentando destravar o áudio...");
-            audio.play().catch(error => console.warn("Ainda bloqueado pelo navegador:", error));
+            console.log("🖱️ Interação detectada! Tentando destravar o áudio...");
+            audio.play().catch(error => console.warn("🚫 Ainda bloqueado pelo navegador:", error));
         }, { once: true });
     
     </script>
+    
     
     
     
