@@ -76,30 +76,31 @@
         const audio = document.getElementById('meuAudio');
         let salaAtual = ""; 
     
+        // Função para tocar áudio e depois voz
         function tocarAudioEVoz(mensagem) {
             console.log("🔊 Tentando tocar áudio...");
     
-            // Reseta o áudio para garantir que ele sempre toque do início
+            // Resetando o áudio para garantir que sempre começa do começo
             audio.currentTime = 0;
             audio.muted = false;
     
-            // Força a reprodução do áudio
+            // Tenta tocar o áudio primeiro
             audio.play()
                 .then(() => {
                     console.log("✅ Áudio tocando...");
                     audio.onended = () => {
-                        console.log("🎤 Tocando a voz...");
+                        console.log("🎤 Áudio finalizado, começando a fala...");
                         responsiveVoice.speak(mensagem, "Brazilian Portuguese Female");
                     };
                 })
                 .catch(error => {
                     console.warn("⚠️ Erro ao tocar áudio:", error);
-                    console.log("🔄 Chamando voz diretamente...");
+                    console.log("🔄 Chamando a voz diretamente...");
                     responsiveVoice.speak(mensagem, "Brazilian Portuguese Female");
                 });
         }
     
-        // 📌 Evento de senha recebida
+        // Quando a senha chega
         socket.on('receive_senha', (data) => {
             console.log("📩 Nova senha recebida:", data.senha);
             document.getElementById('displaySenha').textContent = data.senha || 'Nenhuma senha ainda';
@@ -108,30 +109,26 @@
             tocarAudioEVoz(mensagemPaciente);
         });
     
-        // 📌 Evento de sala recebida
+        // Quando a sala chega
         socket.on('receive_sala', (data) => {
             console.log("📩 Nova sala recebida:", data.sala);
             document.getElementById('displaySala').textContent = data.sala || 'Nenhuma sala ainda';
             salaAtual = data.sala || "";
         });
     
-        // 📌 Evento de doutor recebido
+        // Quando o doutor chega
         socket.on('receive_doutor', (data) => {
             console.log("📩 Novo doutor recebido:", data.doutor);
             document.getElementById('displayDoutor').textContent = data.doutor || 'Nenhum doutor(a) ainda';
         });
     
-        // 📌 Se o navegador bloquear o áudio, tenta liberar com um clique do usuário
+        // Forçando o desbloqueio do áudio na primeira interação do usuário
         document.addEventListener("click", () => {
-            console.log("🖱️ Interação detectada! Tentando destravar o áudio...");
+            console.log("🖱️ Usuário clicou! Tentando destravar o áudio...");
             audio.play().catch(error => console.warn("🚫 Ainda bloqueado pelo navegador:", error));
         }, { once: true });
     
     </script>
-    
-    
-    
-    
     
 </body>
 </html>
