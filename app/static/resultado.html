@@ -78,9 +78,21 @@
     
         // Recebe a senha em tempo real
         socket.on('receive_senha', (data) => {
-            document.getElementById('displaySenha').textContent = data.senha || 'Nenhuma senha ainda';    
+            document.getElementById('displaySenha').textContent = data.senha || 'Nenhuma senha ainda';
+    
+            const mensagemPaciente = `Paciente ${data.senha} ir para ${salaAtual}`;
+    
             // Primeiro toca o som
-            audio.play()
+            audio.play().then(() => {
+                audio.onended = () => {
+                    console.log("Áudio finalizado, iniciando a fala.");
+                    responsiveVoice.speak(mensagemPaciente, "Brazilian Portuguese Female");
+                };
+            }).catch(error => {
+                console.error("Erro ao reproduzir o áudio:", error);
+                responsiveVoice.speak(mensagemPaciente, "Brazilian Portuguese Female");
+            });
+        });
     
         // Recebe a sala em tempo real
         socket.on('receive_sala', (data) => {
